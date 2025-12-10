@@ -1,4 +1,5 @@
 using Plots
+using LaTeXStrings
 
 include("./box_model_helpers.jl")
 
@@ -44,9 +45,9 @@ function plot_moments!(sol, p; file_name = "test_moments.png")
                 time,
                 moments[:, ind],
                 linewidth = 2,
-                xaxis = "time [s]",
-                yaxis = "M" * string(j - 1),
-                label = "M_{" * string(j - 1) * "," * string(i) * "}",
+                xaxis = "t (s)",
+                yaxis = L"M_{%$(j-1)}" * " (kg" * L"^{%$(j-1)}" * " m" * L"^{%$(-3*j)}" * ")",
+                label = L"M_{%$(j-1),%$(i)}",
                 ylims = (-0.1 * maximum(moments[:, ind]), 1.1 * maximum(moments[:, ind])),
             )
             if j <= Nmom_min
@@ -61,7 +62,7 @@ function plot_moments!(sol, p; file_name = "test_moments.png")
             moments_sum[:, i],
             linestyle = :dash,
             linecolor = :black,
-            label = "M_" * string(i - 1),
+            label = L"M_{%$(i-1)}",
             linewidth = 2,
             ylims = (-0.1 * maximum(moments_sum[:, i]), 1.1 * maximum(moments_sum[:, i])),
         )
@@ -104,7 +105,7 @@ function plot_spectra!(sol, p; file_name = "test_spectra.png", logxrange = (-15,
     n_params = [nparams(p.pdists[i]) for i in 1:Ndist]
 
     plt = Array{Plots.Plot}(undef, 3)
-    t_ind = [1, floor(Int, length(sol.t) / 2), length(sol.t)]
+    t_ind = [1, ceil(Int, length(sol.t) / 2), length(sol.t)]
     sp_sum = zeros(length(r), 3)
 
     for i in 1:3
@@ -117,13 +118,14 @@ function plot_spectra!(sol, p; file_name = "test_spectra.png", logxrange = (-15,
             end)
             plot!(
                 r,
-                3 * x .^ 2 .* pdist_tmp.(x),
+                3 * x .^ 2 .* pdist_tmp.(x), # kg / m^3 / log(r) 
                 linewidth = 2,
                 xaxis = :log,
-                yaxis = "dm / d(ln r)",
-                xlabel = "r",
-                label = "Pdist " * string(j),
-                title = "time = " * string(round(sol.t[t_ind[i]], sigdigits = 4)),
+                yaxis = L"\frac{dm}{d\ln(r)}" * " (kg" * " m" * L"^{-3}" * ")",
+                xlabel = L"r (\mu m)",
+                label = "Dist $(j)",
+                legend = (i==1),
+                title = "time = $(round(sol.t[t_ind[i]], sigdigits = 3))s",
             )
             sp_sum[:, i] += 3 * x .^ 2 .* pdist_tmp.(x)
 
@@ -139,7 +141,7 @@ function plot_spectra!(sol, p; file_name = "test_spectra.png", logxrange = (-15,
         layout = grid(1, 3),
         size = (1200, 270),
         foreground_color_legend = nothing,
-        left_margin = 7Plots.mm,
+        left_margin = 12Plots.mm,
         bottom_margin = 8Plots.mm,
     )
 
@@ -173,9 +175,9 @@ function plot_params!(sol, p; yscale = :log10, file_name = "box_model.pdf")
 
         plot()
         for j in ind_rng
-            plot!(time, params[:, j], linewidth = 2, label = "p_" * string(j - ind_rng[1] + 1), yscale = yscale)
+            plot!(time, params[:, j], linewidth = 2, label = L"p_%$(j - ind_rng[1] + 1)", yscale = yscale)
         end
-        plt[i] = plot!(xaxis = "time", yaxis = "parameters (mode " * string(i) * ")")
+        plt[i] = plot!(xaxis = "t (s)", yaxis = "parameters of mode $(i)")
     end
     nrow = floor(Int, sqrt(n_dist))
     ncol = ceil(Int, sqrt(n_dist))

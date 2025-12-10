@@ -31,7 +31,7 @@ ODE_parameters = (; pdists = dist_init, coal_data = coal_data, NProgMoms = NProg
 prob = ODEProblem(rhs, moment_init, tspan, ODE_parameters)
 sol = solve(prob, SSPRK33(), dt = ODE_parameters.dt)
 
-plot_params!(sol, ODE_parameters; file_name = "box_gamma_mixture_4modes_params.pdf", yscale = :identity)
-plot_moments!(sol, ODE_parameters; file_name = "box_gamma_mixture_4modes_moments.pdf")
-plot_spectra!(sol, ODE_parameters; file_name = "box_gamma_mixture_4modes_spectra.pdf", logxrange = (-12, -3))
-print_box_results!(sol, ODE_parameters)
+plot_params!(sol, ODE_parameters; file_name = "../figures/fig3/box_gamma_mixture_4modes_params.pdf", yscale = :identity)
+plot_moments!(sol, ODE_parameters; file_name = "../figures/fig3/box_gamma_mixture_4modes_moments.pdf")
+plot_spectra!(sol, ODE_parameters; file_name = "../figures/fig3/box_gamma_mixture_4modes_spectra.pdf", logxrange = (-12, -3))
+#print_box_results!(sol, ODE_parameters)
