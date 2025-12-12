@@ -192,4 +192,5 @@ colgap!(fig.layout, 3, 10)
 rowgap!(fig.layout, 20)
 
 # Save the figure
-save("./figures/figA1/figA1_KernelFunction_Approximation.pdf", fig, pt_per_unit = 2)
+save(joinpath(dirname(@__DIR__), "figures/figA1/figA1_KernelFunction_Approximation.pdf"), 
+    fig, pt_per_unit = 2)

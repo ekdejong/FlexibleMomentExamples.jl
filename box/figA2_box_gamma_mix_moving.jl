@@ -2,9 +2,9 @@
 
 using OrdinaryDiffEq
 
-include("./utils/box_model_helpers.jl")
-include("./utils/plotting_helpers.jl")
-include("./utils/netcdf_helpers.jl")
+include("../utils/box_model_helpers.jl")
+include("../utils/plotting_helpers.jl")
+include("../utils/netcdf_helpers.jl")
 
 FT = Float64
 
@@ -33,8 +33,8 @@ ODE_parameters = (; pdists = dist_init, coal_data = coal_data, NProgMoms = NProg
 prob = ODEProblem(rhs, moment_init, tspan, ODE_parameters)
 sol = solve(prob, SSPRK33(), dt = ODE_parameters.dt)
 
-box_output(sol, ODE_parameters, "../results/moving_gamma_golovin.nc", FT)
-plot_params!(sol, ODE_parameters; file_name = "../figures/figA2/moving_gamma_golovin_params.pdf", yscale=:identity)
-plot_moments!(sol, ODE_parameters; file_name = "../figures/figA2/moving_gamma_golovin_moments.pdf")
-plot_spectra!(sol, ODE_parameters; file_name = "../figures/figA2/moving_gamma_golovin_spectra.pdf", logxrange = (-12, -3))
+box_output(sol, ODE_parameters, "results/moving_gamma_golovin.nc", FT)
+plot_params!(sol, ODE_parameters; file_name = "figures/figA2/moving_gamma_golovin_params.pdf", yscale=:identity)
+plot_moments!(sol, ODE_parameters; file_name = "figures/figA2/moving_gamma_golovin_moments.pdf")
+plot_spectra!(sol, ODE_parameters; file_name = "figures/figA2/moving_gamma_golovin_spectra.pdf", logxrange = (-12, -3))
 

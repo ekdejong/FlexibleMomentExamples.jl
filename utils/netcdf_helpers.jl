@@ -8,7 +8,7 @@ using Cloudy.ParticleDistributions
 include("./box_model_helpers.jl")
 
 function box_output(sol, p, filepath, FT)
-    ds = NCDataset(joinpath(filepath), "c")
+    ds = NCDataset(joinpath(dirname(@__DIR__), filepath), "c")
 
     # define the dimensions
     time = sol.t

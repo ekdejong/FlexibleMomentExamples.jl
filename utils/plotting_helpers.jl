@@ -1,4 +1,4 @@
-using Plots
+using Plots 
 using LaTeXStrings
 
 include("./box_model_helpers.jl")
@@ -34,13 +34,13 @@ function plot_moments!(sol, p; file_name = "test_moments.png")
 
     plt = Array{Plots.Plot}(undef, Nmom_max)
     for i in 1:Nmom_max
-        plt[i] = plot()
+        plt[i] = Plots.plot()
     end
 
     for i in 1:Ndist
         for j in 1:n_params[i]
             ind = get_dist_moment_ind(p.NProgMoms, i, j)
-            plt[j] = plot(
+            plt[j] = Plots.plot(
                 plt[j],
                 time,
                 moments[:, ind],
@@ -56,7 +56,7 @@ function plot_moments!(sol, p; file_name = "test_moments.png")
         end
     end
     for i in 1:Nmom_min
-        plt[i] = plot(
+        plt[i] = Plots.plot(
             plt[i],
             time,
             moments_sum[:, i],
@@ -72,7 +72,7 @@ function plot_moments!(sol, p; file_name = "test_moments.png")
     if Nrow * Ncol < Nmom_max
         Nrow += 1
     end
-    plot(
+    Plots.plot(
         plt...,
         layout = grid(Nrow, Ncol),
         size = (Ncol * 400, Nrow * 270),
@@ -81,7 +81,7 @@ function plot_moments!(sol, p; file_name = "test_moments.png")
         bottom_margin = 5Plots.mm,
     )
 
-    savefig(file_name)
+    savefig(joinpath(dirname(@__DIR__), file_name))
 end
 
 """
@@ -109,14 +109,14 @@ function plot_spectra!(sol, p; file_name = "test_spectra.png", logxrange = (-15,
     sp_sum = zeros(length(r), 3)
 
     for i in 1:3
-        plt[i] = plot()
+        plt[i] = Plots.plot()
         for j in 1:Ndist
             ind_rng = get_dist_moments_ind_range(p.NProgMoms, j)
             moms = moments[t_ind[i], ind_rng]
             pdist_tmp = update_dist_from_moments(p.pdists[j], ntuple(length(moms)) do i
                 moms[i]
             end)
-            plot!(
+            Plots.plot!(
                 r,
                 3 * x .^ 2 .* pdist_tmp.(x), # kg / m^3 / log(r) 
                 linewidth = 2,
@@ -133,10 +133,10 @@ function plot_spectra!(sol, p; file_name = "test_spectra.png", logxrange = (-15,
                 @show 3 * x .^ 2 .* pdist_tmp.(x)
             end
         end
-        plot!(r, sp_sum[:, i], linewidth = 2, linestyle = :dash, linecolor = :black, label = "Sum")
+        Plots.plot!(r, sp_sum[:, i], linewidth = 2, linestyle = :dash, linecolor = :black, label = "Sum")
     end
 
-    plot(
+    Plots.plot(
         plt...,
         layout = grid(1, 3),
         size = (1200, 270),
@@ -145,7 +145,7 @@ function plot_spectra!(sol, p; file_name = "test_spectra.png", logxrange = (-15,
         bottom_margin = 8Plots.mm,
     )
 
-    savefig(file_name)
+    savefig(joinpath(dirname(@__DIR__), file_name))
 end
 
 """
@@ -173,18 +173,18 @@ function plot_params!(sol, p; yscale = :log10, file_name = "box_model.pdf")
             params[j, ind_rng] = vcat(get_params(pdist_tmp)[2]...)
         end
 
-        plot()
+        Plots.plot()
         for j in ind_rng
-            plot!(time, params[:, j], linewidth = 2, label = L"p_%$(j - ind_rng[1] + 1)", yscale = yscale)
+            Plots.plot!(time, params[:, j], linewidth = 2, label = L"p_%$(j - ind_rng[1] + 1)", yscale = yscale)
         end
-        plt[i] = plot!(xaxis = "t (s)", yaxis = "parameters of mode $(i)")
+        plt[i] = Plots.plot!(xaxis = "t (s)", yaxis = "parameters of mode $(i)")
     end
     nrow = floor(Int, sqrt(n_dist))
     ncol = ceil(Int, sqrt(n_dist))
     if nrow * ncol < n_dist
         nrow += 1
     end
-    plot(
+    Plots.plot(
         plt...,
         layout = grid(nrow, ncol),
         size = (ncol * 400, nrow * 270),
@@ -193,7 +193,7 @@ function plot_params!(sol, p; yscale = :log10, file_name = "box_model.pdf")
         bottom_margin = 5Plots.mm,
     )
 
-    savefig(file_name)
+    savefig(joinpath(dirname(@__DIR__), file_name))
 end
 
 """
