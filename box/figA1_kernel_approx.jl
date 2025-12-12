@@ -1,8 +1,7 @@
 using Cloudy
 using Cloudy.KernelFunctions
 using Cloudy.KernelTensors
-using Plots
-using LaTeXStrings
+using CairoMakie
 using Printf
 
 function compute_kernel_from_tensor(c, x, y)
@@ -50,6 +49,20 @@ function get_z_limits(z_kernel, z_tensor)
     return min_lim, max_lim
 end
 
+# Set up the figure with nice aesthetics
+set_theme!(Theme(
+    fontsize = 16,
+    font = "Latin Modern Roman",
+    Axis = (
+        xgridvisible = false,
+        ygridvisible = false,
+        topspinevisible = false,
+        rightspinevisible = false,
+    ),
+    Colorbar = (
+        ticklabelsize = 14,
+    )
+))
 
 # HydrodynamicKernelFunction
 FT = Float64
@@ -66,107 +79,117 @@ z_kernel = zeros(n, n)
 z_tensor = zeros(n, n)
 for i in 1:n
     for j in 1:n
-        z_kernel[i, j] = i < j ? NaN : kernel_func(x[i], y[j])
-        z_tensor[i, j] = i < j ? NaN : compute_kernel_from_tensor(kernel_tensor.c, x[i], y[j])
+        z_kernel[i, j] = kernel_func(x[i], y[j])
+        z_tensor[i, j] = compute_kernel_from_tensor(kernel_tensor.c, x[i], y[j])
     end
 end
 
-min_lim, max_lim = get_z_limits(z_kernel, z_tensor)
-p1 = contourf(
-    x * 1e9,
-    y * 1e9,
-    z_kernel,
-    xlabel = L"m_1" * " (ng)",
-    ylabel = L"m_2" * " (ng)",
-    title = "Exact Hydrodynamic \nKernel Function",
-    clim = (min_lim, max_lim),
-    colorbar_ticks = (
-        range(min_lim, max_lim, length=5),
-        [@sprintf("%.1e", x) for x in range(min_lim, max_lim, length=5)]
-    ),
-)
-p2 = contourf(
-    x * 1e9, 
-    y * 1e9,
-    z_tensor, 
-    xlabel = L"m_1" * " (ng)", 
-    ylabel = L"m_2" * " (ng)", 
-    title = "Approximated Hydrodynamic \nKernel Tensor", 
-    clim = (min_lim, max_lim),
-    colorbar_ticks = (
-        range(min_lim, max_lim, length=5),
-        [@sprintf("%.1e", x) for x in range(min_lim, max_lim, length=5)]
-    ),
-)
-
 # LongKernelFunction
-limit = FT(1e-9)
-order = 2
+limit2 = FT(1e-9)
+order2 = 2
 
-kernel_func = LongKernelFunction(5.236e-10, 9.44e9, 5.78) # 5.236e-10 kg; 9.44e9 m^3/kg^2/s; 5.78 m^3/kg/s
+kernel_func2 = LongKernelFunction(5.236e-10, 9.44e9, 5.78) # 5.236e-10 kg; 9.44e9 m^3/kg^2/s; 5.78 m^3/kg/s
 matrix_of_kernels = ntuple(2) do i
     ntuple(2) do j
         if i == j == 1
-            CoalescenceTensor(kernel_func, 2, FT(5e-10))
+            CoalescenceTensor(kernel_func2, 2, FT(5e-10))
         else
-            CoalescenceTensor(kernel_func, 2, FT(1e-6), FT(5e-10))
+            CoalescenceTensor(kernel_func2, 2, FT(1e-6), FT(5e-10))
         end
     end
 end
 
-n = 100
-x = range(0, limit, n)
-y = range(0, limit, n)
-z_kernel = zeros(n, n)
-z_tensor = zeros(n, n)
+n2 = 100
+x2 = range(0, limit2, n)
+y2 = range(0, limit2, n)
+z_kernel2 = zeros(n, n)
+z_tensor2 = zeros(n, n)
 for i in 1:n
     for j in 1:n
-        z_kernel[i, j] = i < j ? NaN : kernel_func(x[i], y[j])
-        z_tensor[i, j] =
-            i < j ? NaN : compute_kernel_from_tensor_matrix(matrix_of_kernels, (FT(0), FT(5e-10), FT(1e-6)), x[i], y[j])
+        z_kernel2[i, j] = kernel_func2(x2[i], y2[j])
+        z_tensor2[i, j] =
+            compute_kernel_from_tensor_matrix(matrix_of_kernels, (FT(0), FT(5e-10), FT(1e-6)), x2[i], y2[j])
     end
 end
 
-min_lim, max_lim = get_z_limits(z_kernel, z_tensor)
-p3 = contourf(
-    x * 1e9,
-    y * 1e9,
-    z_kernel,
-    xlabel = L"m_1" * " (ng)",
-    ylabel = L"m_2" * " (ng)",
-    title = "Exact Long 1974 \nKernel Function",
-    colorbar_ticks = (
-        range(min_lim, max_lim, length=5),
-        [@sprintf("%.1e", x) for x in range(min_lim, max_lim, length=5)]
-    ),
-    clim = (min_lim, max_lim),
+# Create the figure
+fig = Figure(size = (800, 600), backgroundcolor = :white)
+
+# Plot 1: Exact Hydrodynamic
+ax1 = Axis(fig[1, 1],
+    xlabel = L"m_1 \text{ (ng)}",
+    ylabel = L"m_2 \text{ (ng)}",
+    title = "Exact Hydrodynamic\nKernel Function",
+    titlesize = 18,
 )
-p4 = contourf(
-    x * 1e9, 
-    y * 1e9, 
-    z_tensor, 
-    xlabel = L"m_1" * " (ng)", 
-    ylabel = L"m_2" * " (ng)", 
-    title = "Approximated Long 1974 \nKernel Tensor", 
-    colorbar_ticks = (
-        range(min_lim, max_lim, length=5),
-        [@sprintf("%.1e", x) for x in range(min_lim, max_lim, length=5)]
-    ),
-    clim = (min_lim, max_lim),
+min_lim1, max_lim1 = get_z_limits(z_kernel, z_tensor)
+hm1 = contourf!(ax1, x * 1e9, y * 1e9, z_kernel,
+    levels = 20,
+    colormap = :viridis,
+    colorscale = (min_lim1, max_lim1)
+)
+cb1 = Colorbar(fig[1, 2], 
+    colorrange = (min_lim1, max_lim1),
+    label = L"K \, (m^3/s)"
 )
 
-plot(
-    p1,
-    p2,
-    p3,
-    p4,
-    layout = (2, 2),
-    size = (1200, 800),
-    dpi = 300,
-    bottom_margin = 10Plots.mm,
-    left_margin = 2Plots.mm,
-    right_margin = 15Plots.mm,
-    yformatter = :scientific,
-    xformatter = :scientific,
+# Plot 2: Approximated Hydrodynamic
+ax2 = Axis(fig[1, 3],
+    xlabel = L"m_1 \text{ (ng)}",
+    ylabel = L"m_2 \text{ (ng)}",
+    title = "Approximated Hydrodynamic\nKernel Tensor",
+    titlesize = 18,
 )
-savefig("../figures/figA1/figA1_KernelFunction_Approximation.pdf")
+hm2 = contourf!(ax2, x * 1e9, y * 1e9, z_tensor,
+    levels = 20,
+    colormap = :viridis,
+    colorscale = (min_lim1, max_lim1)
+)
+cb2 = Colorbar(fig[1, 4], 
+    colorrange = (min_lim1, max_lim1),
+    label = L"K \, (m^3/s)",
+)
+
+# Plot 3: Exact Long 1974
+ax3 = Axis(fig[2, 1],
+    xlabel = L"m_1 \text{ (ng)}",
+    ylabel = L"m_2 \text{ (ng)}",
+    title = "Exact Long 1974\nKernel Function",
+    titlesize = 18,
+)
+min_lim2, max_lim2 = get_z_limits(z_kernel2, z_tensor2)
+hm3 = contourf!(ax3, x2 * 1e9, y2 * 1e9, z_kernel2,
+    levels = 20,
+    colormap = :viridis,
+    colorscale = (min_lim2, max_lim2)
+)
+cb3 = Colorbar(fig[2, 2], 
+    colorrange = (min_lim2, max_lim2),
+    label = L"K \, (m^3/s)"
+)
+
+# Plot 4: Approximated Long 1974
+ax4 = Axis(fig[2, 3],
+    xlabel = L"m_1 \text{ (ng)}",
+    ylabel = L"m_2 \text{ (ng)}",
+    title = "Approximated Long 1974\nKernel Tensor",
+    titlesize = 18,
+)
+hm4 = contourf!(ax4, x2 * 1e9, y2 * 1e9, z_tensor2,
+    levels = 20,
+    colormap = :viridis,
+    colorscale = (min_lim2, max_lim2)
+)
+cb1 = Colorbar(fig[2, 4], 
+    colorrange = (min_lim2, max_lim2),
+    label = L"K \, (m^3/s)"
+)
+
+# Adjust layout spacing
+colgap!(fig.layout, 1, 10)
+colgap!(fig.layout, 2, 30)
+colgap!(fig.layout, 3, 10)
+rowgap!(fig.layout, 20)
+
+# Save the figure
+save("./figures/figA1/figA1_KernelFunction_Approximation.pdf", fig, pt_per_unit = 2)
