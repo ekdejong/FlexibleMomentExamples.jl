@@ -90,17 +90,3 @@ for nd in n_dist_list
 
     box_output(sol, ODE_parameters, "results/fig5_box_$(nd)_gamma_hydro.nc", FT)
 end
-
-# n_dist_list = (1, 2, 4, 8)
-# for nd in n_dist_list
-#     print("computing for $(nd) distributions \n")
-#     (dist_init, NProgMoms, mom_init, thresholds) = init_conditions_exp(moments_init, nd)
-#     coal_data = CoalescenceData(kernel, NProgMoms, thresholds, norms)
-#     rhs = make_box_model_rhs(AnalyticalCoalStyle())
-#     ODE_parameters = (; pdists = dist_init, coal_data = coal_data, NProgMoms = NProgMoms, norms = norms, dt = FT(10))
-
-#     prob = ODEProblem(rhs, mom_init, tspan, ODE_parameters)
-#     sol = solve(prob, SSPRK33(), dt = ODE_parameters.dt)
-
-#     box_output(sol, ODE_parameters, "results/fig5_box_$(nd)_exp_hydro.nc", FT)
-# end
