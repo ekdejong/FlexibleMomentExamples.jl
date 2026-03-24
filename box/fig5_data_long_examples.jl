@@ -18,7 +18,7 @@ function init_conditions_gamma(init_moments, num_modes; moving=false)
             thresholds = 0.99 * ones(num_modes)
             thresholds[end] = 1.0
         else
-            thresholds = 5 * 10 .^ range(-10, -6; length=num_modes)
+            thresholds = 4 * 10 .^ range(-10, -6; length=num_modes)
             thresholds[end] = Inf
         end
         thresholds = Tuple(thresholds)
@@ -54,7 +54,7 @@ Initializes a set of exponential distributions.
 """
 function init_conditions_exp(init_moments, num_modes)
     if num_modes > 1
-        thresholds = 10 .^ range(-10, -5; length=num_modes)
+        thresholds = 4 * 10 .^ range(-10, -5; length=num_modes)
         thresholds[end] = Inf
         thresholds = Tuple(thresholds)
     else
@@ -80,21 +80,22 @@ end
 
 
 # Common parameters
-moments_init = [1e8, 1e-2, 2e-12] # single gamma initial condition
-kernel_func = LongKernelFunction(5e-10, 9.44e9, 5.78) # 5.236e-10 kg; 9.44e9 m^3/kg^2/s; 5.78 m^3/kg/s
-tspan = (FT(0), FT(120))
+moments_init = [1e8, 4e-3, 3.2e-13] # single gamma initial condition
+x_star = 5.236e-10 # kg; corresponds to r = 0.5 microns
+kernel_func = LongKernelFunction(x_star, 9.44e9, 5.78) # 5.236e-10 kg; 9.44e9 m^3/kg^2/s; 5.78 m^3/kg/s
+tspan = (FT(0), FT(180))
 norms = (1e6, 1e-9) # 1e6/m^3; 1e-9 kg
 
-n_dist_list = (2, 4, 8)
+n_dist_list = (1, 2, 3, 8)
 for nd in n_dist_list
     print("computing for $(nd) distributions \n")
     (dist_init, NProgMoms, mom_init, thresholds) = init_conditions_gamma(moments_init, nd)
     matrix_of_kernels = ntuple(nd) do i
         ntuple(nd) do j
-            if thresholds[i] < 5e-10 && thresholds[j] < 5e-10
-                CoalescenceTensor(kernel_func, 2, FT(5e-10))
+            if thresholds[i] < x_star && thresholds[j] < x_star
+                CoalescenceTensor(kernel_func, 2, FT(x_star))
             else
-                CoalescenceTensor(kernel_func, 2, FT(1e-6), FT(5e-10))
+                CoalescenceTensor(kernel_func, 2, FT(1e-6), FT(x_star))
             end
         end
     end
