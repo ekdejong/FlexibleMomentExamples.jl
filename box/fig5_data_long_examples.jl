@@ -55,11 +55,7 @@ Initializes a set of exponential distributions.
 """
 function init_conditions_exp(init_moments, num_modes)
     if num_modes > 1
-<<<<<<< HEAD
         thresholds = 4 * 10 .^ range(-10, -5; length=num_modes)
-=======
-        thresholds = 10 .^ range(-10, -5; length = num_modes)
->>>>>>> baa55af (add cwp rwp and rr plots for KiD with collision and sedimentation; apply format)
         thresholds[end] = Inf
         thresholds = Tuple(thresholds)
     else
