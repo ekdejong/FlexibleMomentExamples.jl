@@ -146,7 +146,7 @@ function run_KiD_col_sed_simulation(::Type{FT}, opts) where {FT}
 
     # Some basic plots
     @info "Plotting"
-    plot_timeheight_no_ice_snow(fname, output = path)
+    plot_timeheight(fname, output = path)
 end
 
 opts_common = Dict(
@@ -232,4 +232,5 @@ data_files = [
     output_nc_path(_opts) for
     _opts in [opts_cloudy6, opts_cloudy4, opts_cloudy6_gol, opts_1m, opts_2m]
 ]
-plot_cwp_rwp_rr(data_files, output = opts_common["root_path"])
+pysdm_file = joinpath(opts_common["root_path"], "../../results/pysdm/pysdm_colSed_fullDomain_N0=100.nc")
+plot_cwp_rwp_rr([data_files..., pysdm_file], output = opts_common["root_path"], is_the_last_pysdm = true)
