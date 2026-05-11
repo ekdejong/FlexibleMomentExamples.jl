@@ -18,7 +18,7 @@ function init_conditions_gamma(init_moments, num_modes; moving = false)
             thresholds = 0.99 * ones(num_modes)
             thresholds[end] = 1.0
         else
-            thresholds = 4 * 10 .^ range(-10, -6; length=num_modes)
+            thresholds = 4 * 10 .^ range(-10, -6; length = num_modes)
             thresholds[end] = Inf
         end
         thresholds = Tuple(thresholds)
@@ -55,7 +55,7 @@ Initializes a set of exponential distributions.
 """
 function init_conditions_exp(init_moments, num_modes)
     if num_modes > 1
-        thresholds = 4 * 10 .^ range(-10, -5; length=num_modes)
+        thresholds = 4 * 10 .^ range(-10, -5; length = num_modes)
         thresholds[end] = Inf
         thresholds = Tuple(thresholds)
     else

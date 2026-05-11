@@ -232,5 +232,12 @@ data_files = [
     output_nc_path(_opts) for
     _opts in [opts_cloudy6, opts_cloudy4, opts_cloudy6_gol, opts_1m, opts_2m]
 ]
-pysdm_file = joinpath(opts_common["root_path"], "../../results/pysdm/pysdm_colSed_fullDomain_N0=100.nc")
-plot_cwp_rwp_rr([data_files..., pysdm_file], output = opts_common["root_path"], is_the_last_pysdm = true)
+pysdm_file = joinpath(
+    opts_common["root_path"],
+    "../../results/pysdm/pysdm_colSed_fullDomain_N0=100.nc",
+)
+plot_cwp_rwp_rr(
+    [data_files..., pysdm_file],
+    output = opts_common["root_path"],
+    is_the_last_pysdm = true,
+)
