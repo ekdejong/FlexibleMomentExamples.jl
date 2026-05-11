@@ -23,8 +23,8 @@ function box_output(sol, p, filepath, FT)
     M = defVar(ds, "moments", FT, ("t", "dist", "order"))
     Mtot = defVar(ds, "total_moments", FT, ("t", "order"))
     moments = vcat(sol.u'...)
-    for i in 1:Ndist
-        for j in 1:p.NProgMoms[i]
+    for i = 1:Ndist
+        for j = 1:p.NProgMoms[i]
             ind = get_dist_moment_ind(p.NProgMoms, i, j)
             M[:, i, j] = moments[:, ind]
         end
@@ -32,8 +32,8 @@ function box_output(sol, p, filepath, FT)
 
     Nmom_min = minimum(p.NProgMoms)
     moments_sum = zeros(length(time), Nmom_min)
-    for i in 1:Ndist
-        for j in 1:Nmom_min
+    for i = 1:Ndist
+        for j = 1:Nmom_min
             ind = get_dist_moment_ind(p.NProgMoms, i, j)
             moments_sum[:, j] += moments[:, ind]
         end
@@ -44,8 +44,8 @@ function box_output(sol, p, filepath, FT)
     Nmom_max = maximum(p.NProgMoms)
     pp = defVar(ds, "params", FT, ("t", "dist", "order"))
     params = zeros(length(time), Ndist, Nmom_max)
-    for i in 1:length(time)
-        for j in 1:Ndist
+    for i = 1:length(time)
+        for j = 1:Ndist
             ind_rng = get_dist_moments_ind_range(p.NProgMoms, j)
             moms = moments[i, ind_rng]
             pdist_tmp = update_dist_from_moments(p.pdists[j], ntuple(length(moms)) do i

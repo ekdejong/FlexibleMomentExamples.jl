@@ -78,8 +78,10 @@ function run_KiD_simulation(::Type{FT}, opts) where {FT}
 
     moisture = CO.get_moisture_type(moisture_choice, toml_dict)
     precip = CO.get_precipitation_type(
-        precipitation_choice, toml_dict;
-        rain_formation_choice, sedimentation_choice,
+        precipitation_choice,
+        toml_dict;
+        rain_formation_choice,
+        sedimentation_choice,
         boundary = opts["p3_boundary_condition"],
     )
 
@@ -88,7 +90,8 @@ function run_KiD_simulation(::Type{FT}, opts) where {FT}
     TS = CO.TimeStepping(FT(opts["dt"]), FT(opts["dt_output"]), FT(opts["t_end"]))
 
     # Create the coordinates
-    space, face_space = K1D.make_function_space(FT, FT(opts["z_min"]), FT(opts["z_max"]), opts["n_elem"])
+    space, face_space =
+        K1D.make_function_space(FT, FT(opts["z_min"]), FT(opts["z_max"]), opts["n_elem"])
     coord = CC.Fields.coordinate_field(space)
     face_coord = CC.Fields.coordinate_field(face_space)
 
@@ -102,26 +105,62 @@ function run_KiD_simulation(::Type{FT}, opts) where {FT}
     if precipitation_choice == "CloudyPrecip"
         pdist_types = determine_cloudy_disttypes(opts["num_moments"])
         cloudy_params, cloudy_pdists = create_cloudy_parameters(FT, pdist_types)
-        ic_1d = CO.initial_condition_1d.(FT, common_params, kid_params, thermo_params, (ρ_profile,), coord.z)
+        ic_1d =
+            CO.initial_condition_1d.(
+                FT,
+                common_params,
+                kid_params,
+                thermo_params,
+                (ρ_profile,),
+                coord.z,
+            )
         init = CO.cloudy_initial_condition.((cloudy_pdists,), ic_1d)
     elseif precipitation_choice == "PrecipitationP3"
         cloudy_params = nothing
-        (; ice_start, _q_flux, _N_flux, _F_rim, _F_liq, _ρ_r_init) = precip.p3_boundary_condition
+        (; ice_start, _q_flux, _N_flux, _F_rim, _F_liq, _ρ_r_init) =
+            precip.p3_boundary_condition
         init =
             CO.p3_initial_condition.(
-                FT, kid_params, thermo_params, coord.z;
-                _q_init = _q_flux, _N_init = _N_flux, _F_rim = _F_rim, _F_liq = _F_liq,
-                _ρ_r = _ρ_r_init, z_top = FT(opts["z_max"]), ice_start = ice_start,
+                FT,
+                kid_params,
+                thermo_params,
+                coord.z;
+                _q_init = _q_flux,
+                _N_init = _N_flux,
+                _F_rim = _F_rim,
+                _F_liq = _F_liq,
+                _ρ_r = _ρ_r_init,
+                z_top = FT(opts["z_max"]),
+                ice_start = ice_start,
             )
     else
         cloudy_params = nothing
-        init = CO.initial_condition_1d.(FT, common_params, kid_params, thermo_params, (ρ_profile,), coord.z)
+        init =
+            CO.initial_condition_1d.(
+                FT,
+                common_params,
+                kid_params,
+                thermo_params,
+                (ρ_profile,),
+                coord.z,
+            )
     end
 
     # Create aux vector and apply initial condition
     aux = K1D.initialise_aux(
-        FT, init, common_params, kid_params, thermo_params, air_params, activation_params,
-        TS, Stats, face_space, moisture, precip, cloudy_params,
+        FT,
+        init,
+        common_params,
+        kid_params,
+        thermo_params,
+        air_params,
+        activation_params,
+        TS,
+        Stats,
+        face_space,
+        moisture,
+        precip,
+        cloudy_params,
     )
 
     # Create state vector and apply initial condition
@@ -131,7 +170,11 @@ function run_KiD_simulation(::Type{FT}, opts) where {FT}
     CO.simulation_output(aux, 0.0)
 
     # Define callbacks for output
-    callback_io = ODE.DiscreteCallback(CO.condition_io, CO.affect_io!; save_positions = (false, false))
+    callback_io = ODE.DiscreteCallback(
+        CO.condition_io,
+        CO.affect_io!;
+        save_positions = (false, false),
+    )
     callback = ODE.CallbackSet(callback_io)
 
     # Collect all the tendencies into rhs function for ODE solver
@@ -142,9 +185,13 @@ function run_KiD_simulation(::Type{FT}, opts) where {FT}
     problem = ODE.ODEProblem(ode_rhs!, Y, (FT(opts["t_ini"]), FT(opts["t_end"])), aux)
     @info "Solving"
     integrator = ODE.init(
-        problem, ODE.SSPRK33();
-        TS.dt, saveat = TS.dt_io, callback,
-        progress = true, progress_message = (dt, u, p, t) -> t,
+        problem,
+        ODE.SSPRK33();
+        TS.dt,
+        saveat = TS.dt_io,
+        callback,
+        progress = true,
+        progress_message = (dt, u, p, t) -> t,
     )
     ODE.solve!(integrator)
     # ODE.step!(integrator)  # For debugging
@@ -171,8 +218,8 @@ end
 
 opts = default_KiD_config()
 opts["moisture_choice"] = "CloudyMoisture"
-opts["precipitation_choice"] = "CloudyPrecip" 
-opts["n_elem"] = 128 
+opts["precipitation_choice"] = "CloudyPrecip"
+opts["n_elem"] = 128
 opts["num_moments"] = 6
 
 run_KiD_simulation(Float64, opts)

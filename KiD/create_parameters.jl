@@ -33,7 +33,8 @@ function override_toml_dict(
         "mean_sea_level_pressure" => Dict("value" => 100000.0, "type" => "float"),
         "gravitational_acceleration" => Dict("value" => 9.80665, "type" => "float"),
         "universal_gas_constant" => Dict("value" => 8.314462618, "type" => "float"),
-        "adiabatic_exponent_dry_air" => Dict("value" => 0.2855747338575384, "type" => "float"),
+        "adiabatic_exponent_dry_air" =>
+            Dict("value" => 0.2855747338575384, "type" => "float"),
         "isobaric_specific_heat_vapor" => Dict("value" => 1850.0, "type" => "float"),
         "gas_constant_vapor" => Dict("value" => 461.52998157091315, "type" => "float"),
         "gas_constant_dry_air" => Dict("value" => 287.0027047999343, "type" => "float"),
@@ -42,11 +43,14 @@ function override_toml_dict(
         "prescribed_flow_w1" => Dict("value" => w1, "type" => "float"),
         "prescribed_flow_t1" => Dict("value" => t1, "type" => "float"),
         "surface_pressure" => Dict("value" => p0, "type" => "float"),
-        "precipitation_sources_flag" => Dict("value" => precip_sources, "type" => "bool"),
+        "precipitation_sources_flag" =>
+            Dict("value" => precip_sources, "type" => "bool"),
         "precipitation_sinks_flag" => Dict("value" => precip_sinks, "type" => "bool"),
-        "qtot_flux_correction_flag" => Dict("value" => qtot_flux_correction, "type" => "bool"),
+        "qtot_flux_correction_flag" =>
+            Dict("value" => qtot_flux_correction, "type" => "bool"),
         "prescribed_Nd" => Dict("value" => prescribed_Nd, "type" => "float"),
-        "open_system_activation" => Dict("value" => open_system_activation, "type" => "bool"),
+        "open_system_activation" =>
+            Dict("value" => open_system_activation, "type" => "bool"),
         "local_activation" => Dict("value" => local_activation, "type" => "bool"),
         "r_dry" => Dict("value" => r_dry, "type" => "float"),
         "std_dry" => Dict("value" => std_dry, "type" => "float"),
@@ -136,37 +140,55 @@ function determine_cloudy_disttypes(NM::Int, default_gamma = true, initial_gamma
     return dist_names
 end
 
-function create_cloudy_parameters(FT, dist_names::NTuple{ND, String} = ("gamma", "gamma")) where {ND}
+function create_cloudy_parameters(
+    FT,
+    dist_names::NTuple{ND,String} = ("gamma", "gamma"),
+    kernel_name::String = "Golovin",
+) where {ND}
 
     # Create water category distributions
     function make_dist(dist_name)
         if dist_name == "monodisperse"
-            return CL.ParticleDistributions.MonodispersePrimitiveParticleDistribution(FT(0), FT(1))
+            return CL.ParticleDistributions.MonodispersePrimitiveParticleDistribution(
+                FT(0),
+                FT(1),
+            )
         elseif dist_name == "exponential"
-            return CL.ParticleDistributions.ExponentialPrimitiveParticleDistribution(FT(0), FT(1))
+            return CL.ParticleDistributions.ExponentialPrimitiveParticleDistribution(
+                FT(0),
+                FT(1),
+            )
         elseif dist_name == "gamma"
-            return CL.ParticleDistributions.GammaPrimitiveParticleDistribution(FT(0), FT(1), FT(1))
+            return CL.ParticleDistributions.GammaPrimitiveParticleDistribution(
+                FT(0),
+                FT(1),
+                FT(1),
+            )
         end
     end
-    pdists::NTuple{ND, CL.ParticleDistributions.PrimitiveParticleDistribution} = map(dist_names) do name
-        make_dist(name)
-    end
+    pdists::NTuple{ND,CL.ParticleDistributions.PrimitiveParticleDistribution} =
+        map(dist_names) do name
+            make_dist(name)
+        end
 
     # Create tuple of number of prognostic moments for each distribution
-    NProgMoms::NTuple{ND, Int} = map(pdists) do dist
+    NProgMoms::NTuple{ND,Int} = map(pdists) do dist
         CL.ParticleDistributions.nparams(dist)
     end
 
     # Define norms of number per volume and mass of particles
-    norms::Tuple{FT, FT} = (FT(1e6), FT(1e-9)) # 1e6 1/m^3, 1e-9 kg
+    norms::Tuple{FT,FT} = (FT(1e6), FT(1e-9)) # 1e6 1/m^3, 1e-9 kg
 
     # Compute normalizing factors of prognostic moments
     NM = sum(NProgMoms)
-    mom_norms::NTuple{NM, FT} = CL.get_moments_normalizing_factors(Int.(NProgMoms), norms)
+    mom_norms::NTuple{NM,FT} = CL.get_moments_normalizing_factors(Int.(NProgMoms), norms)
 
     # Define collision kernel function
-    kernel_func = CL.KernelFunctions.LinearKernelFunction(5e0) # 5 m^3 / kg / s
-    # kernel_func = CL.KernelFunctions.LongKernelFunction(5.236e-10, 9.44e9, 5.78)
+    kernel_func =
+        kernel_name == "Golovin" ? CL.KernelFunctions.LinearKernelFunction(5e0) : # 5 m^3 / kg / s
+        kernel_name == "Long" ?
+        CL.KernelFunctions.LongKernelFunction(5.236e-10, 9.44e9, 5.78) :
+        error("Unknown kernel!!!")
 
     # Compute matrix of kernel tensors each approximating kernel func as polynomail serries
     r = 2
@@ -192,13 +214,20 @@ function create_cloudy_parameters(FT, dist_names::NTuple{ND, String} = ("gamma",
     @show mass_thresholds
 
     # Define coalescence data required by Cloudy
-    coal_data::CL.Coalescence.CoalescenceData{ND, r + 1, FT, (r + 1)^2} =
+    coal_data::CL.Coalescence.CoalescenceData{ND,r + 1,FT,(r + 1)^2} =
         CL.Coalescence.CoalescenceData(matrix_of_kernels, NProgMoms, mass_thresholds, norms)
 
     # Define terminal velocity coefficients, assuming vt = sum_i v_i[1] * x^(v_i[2]) 
     # v1 is normalized by mass norm; v1 = v1 * norm[2] ^ v2
     vel = ((FT(30), FT(1.0 / 6)),) # 30 kg ^ (-1/6) * m / s
 
-    cloudy_params = CO.Parameters.CloudyParameters(NProgMoms, norms, mom_norms, coal_data, vel, size_threshold)
+    cloudy_params = CO.Parameters.CloudyParameters(
+        NProgMoms,
+        norms,
+        mom_norms,
+        coal_data,
+        vel,
+        size_threshold,
+    )
     return cloudy_params, pdists
 end

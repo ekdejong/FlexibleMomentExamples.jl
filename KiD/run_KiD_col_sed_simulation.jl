@@ -18,16 +18,8 @@ function run_KiD_col_sed_simulation(::Type{FT}, opts) where {FT}
     @info precipitation_choice, rain_formation_choice, sedimentation_choice
 
     # Decide the output flder name based on options
-    output_folder = string("Output_", precipitation_choice)
-    if precipitation_choice in ["Precipitation1M", "Precipitation2M"]
-        output_folder = output_folder * "_" * rain_formation_choice
-        if sedimentation_choice == "Chen2022"
-            output_folder = output_folder * "_Chen2022"
-        end
-    elseif precipitation_choice == "CloudyPrecip"
-        output_folder = output_folder * "_" * string(opts["num_moments"])
-    end
-    path = joinpath(@__DIR__, output_folder)
+    output_folder = opts["output_folder"]
+    path = joinpath(opts["root_path"], output_folder)
     mkpath(path)
 
     # Overwrite the defaults parameters based on options
@@ -47,7 +39,8 @@ function run_KiD_col_sed_simulation(::Type{FT}, opts) where {FT}
     air_params = CMP.AirProperties(toml_dict)
     activation_params = CMP.AerosolActivationParameters(toml_dict)
 
-    moisture_choice = precipitation_choice == "CloudyPrecip" ? "CloudyMoisture" : "NonEquilibriumMoisture"
+    moisture_choice =
+        precipitation_choice == "CloudyPrecip" ? "CloudyMoisture" : "NonEquilibriumMoisture"
     moisture = CO.get_moisture_type(moisture_choice, toml_dict)
     precip = CO.get_precipitation_type(
         precipitation_choice,
@@ -61,12 +54,13 @@ function run_KiD_col_sed_simulation(::Type{FT}, opts) where {FT}
     TS = CO.TimeStepping(FT(opts["dt"]), FT(opts["dt_output"]), FT(opts["t_end"]))
 
     # Create the coordinates
-    space, face_space = K1D.make_function_space(FT, FT(opts["z_min"]), FT(opts["z_max"]), opts["n_elem"])
+    space, face_space =
+        K1D.make_function_space(FT, FT(opts["z_min"]), FT(opts["z_max"]), opts["n_elem"])
     coord = CC.Fields.coordinate_field(space)
     face_coord = CC.Fields.coordinate_field(face_space)
 
     # Initialize the netcdf output Stats struct
-    fname = joinpath(path, "Output.nc")
+    fname = joinpath(path, opts["output_nc_file"])
     Stats = CO.NetCDFIO_Stats(
         fname,
         1.0,
@@ -83,10 +77,18 @@ function run_KiD_col_sed_simulation(::Type{FT}, opts) where {FT}
     )
 
     # Create the initial condition profiles
-    ic_0d = CO.initial_condition_0d(FT, thermo_params, opts["qt"], opts["prescribed_Nd"], opts["k"], opts["rhod"])
+    ic_0d = CO.initial_condition_0d(
+        FT,
+        thermo_params,
+        opts["qt"],
+        opts["prescribed_Nd"],
+        opts["k"],
+        opts["rhod"],
+    )
     if precipitation_choice == "CloudyPrecip"
         cloudy_disttypes = determine_cloudy_disttypes(opts["num_moments"])
-        cloudy_params, cloudy_pdists = create_cloudy_parameters(FT, cloudy_disttypes)
+        cloudy_params, cloudy_pdists =
+            create_cloudy_parameters(FT, cloudy_disttypes, opts["kernel"])
         ic_cloudy = CO.cloudy_initial_condition(cloudy_pdists, ic_0d, opts["k"])
         init = map(Returns(ic_cloudy), coord)
     else
@@ -118,7 +120,11 @@ function run_KiD_col_sed_simulation(::Type{FT}, opts) where {FT}
     CO.simulation_output(aux, 0.0)
 
     # Define callbacks for output
-    callback_io = ODE.DiscreteCallback(CO.condition_io, CO.affect_io!; save_positions = (false, false))
+    callback_io = ODE.DiscreteCallback(
+        CO.condition_io,
+        CO.affect_io!;
+        save_positions = (false, false),
+    )
     callbacks = ODE.CallbackSet(callback_io)
 
     # Collect all the tendencies into rhs function for ODE solver
@@ -140,19 +146,18 @@ function run_KiD_col_sed_simulation(::Type{FT}, opts) where {FT}
 
     # Some basic plots
     @info "Plotting"
-    plot_folder = joinpath(path, "figures")
-    plot_timeheight_no_ice_snow(joinpath(path, "Output.nc"), output = plot_folder)
+    plot_timeheight_no_ice_snow(fname, output = path)
 end
 
-opts = Dict(
+opts_common = Dict(
     "qt" => 1e-3,
     "prescribed_Nd" => 1e8,
     "k" => 2.0,
     "rhod" => 1.0,
-    "precipitation_choice" => "CloudyPrecip",
+    "precipitation_choice" => nothing,
+    "rain_formation_choice" => nothing,
+    "sedimentation_choice" => nothing,
     "num_moments" => 6,
-    "rain_formation_choice" => "CliMA_1M",
-    "sedimentation_choice" => "CliMA_1M",
     "z_min" => 0.0,
     "z_max" => 3000.0,
     "n_elem" => 60,
@@ -160,5 +165,71 @@ opts = Dict(
     "dt_output" => 30.0,
     "t_ini" => 0.0,
     "t_end" => 3600.0,
+    "root_path" => joinpath(@__DIR__, "Output_KiD_col_sed"),
+    "output_folder" => "output",
+    "output_nc_file" => "Output.nc",
 )
-run_KiD_col_sed_simulation(Float64, opts);
+opts_cloudy4 = merge(
+    opts_common,
+    Dict(
+        "precipitation_choice" => "CloudyPrecip",
+        "num_moments" => 4,
+        "kernel" => "Long",
+        "output_folder" => "CloudyPrecip_4",
+        "output_nc_file" => "Flexible_4M,_Long.nc",
+    ),
+)
+opts_cloudy6 = merge(
+    opts_common,
+    Dict(
+        "precipitation_choice" => "CloudyPrecip",
+        "num_moments" => 6,
+        "kernel" => "Long",
+        "output_folder" => "CloudyPrecip_6",
+        "output_nc_file" => "Flexible_6M,_Long.nc",
+    ),
+)
+opts_cloudy6_gol = merge(
+    opts_common,
+    Dict(
+        "precipitation_choice" => "CloudyPrecip",
+        "num_moments" => 6,
+        "kernel" => "Golovin",
+        "output_folder" => "CloudyPrecip_6_gol",
+        "output_nc_file" => "Flexible_6M,_Golovin.nc",
+    ),
+)
+opts_1m = merge(
+    opts_common,
+    Dict(
+        "precipitation_choice" => "Precipitation1M",
+        "rain_formation_choice" => "CliMA_1M",
+        "sedimentation_choice" => "CliMA_1M",
+        "output_folder" => "Precipitation1M",
+        "output_nc_file" => "1M,_Kessler.nc",
+    ),
+)
+opts_2m = merge(
+    opts_common,
+    Dict(
+        "precipitation_choice" => "Precipitation2M",
+        "rain_formation_choice" => "SB2006",
+        "sedimentation_choice" => "SB2006",
+        "output_folder" => "Precipitation2M",
+        "output_nc_file" => "2M,_SB2006.nc",
+    ),
+)
+
+multiple_models_opts = (opts_cloudy4, opts_cloudy6, opts_cloudy6_gol, opts_1m, opts_2m)
+for opts in multiple_models_opts
+    run_KiD_col_sed_simulation(Float64, opts)
+end
+
+# plot cwp, rwp and rr 
+output_nc_path(_opts) =
+    joinpath(_opts["root_path"], _opts["output_folder"], _opts["output_nc_file"])
+data_files = [
+    output_nc_path(_opts) for
+    _opts in [opts_cloudy6, opts_cloudy4, opts_cloudy6_gol, opts_1m, opts_2m]
+]
+plot_cwp_rwp_rr(data_files, output = opts_common["root_path"])

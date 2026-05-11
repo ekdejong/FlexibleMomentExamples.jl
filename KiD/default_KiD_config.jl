@@ -2,7 +2,7 @@ function default_KiD_config()
     return Dict(
         # Mositure model choice: EquilibriumMoisture, NonEquilibriumMoisture, CloudyMoisture, MoistureP3
         "moisture_choice" => "EquilibriumMoisture",
-        
+
         # Precipitation model choice: NoPrecipitation, Precipitation0M, Precipitation1M, Precipitation2M, CloudyPrecip, PrecipitationP3
         "precipitation_choice" => "Precipitation1M",
 
@@ -81,7 +81,7 @@ function default_KiD_config()
 
         # Initial condition z1 [m]
         "z_1" => Float64(740),
-        
+
         # Initial condition z2 [m]
         "z_2" => Float64(3260),
 
@@ -112,6 +112,6 @@ function default_KiD_config()
             _F_rim = Float64(0.2),
             _F_liq = Float64(0.2),
             _ρ_r_init = Float64(900),
-        )
+        ),
     )
 end
