@@ -37,7 +37,7 @@ function parcel_model_cloudy(dY, Y, p, t)
     qₗ = FT(0)
     # ... water mass budget
     mass_ind = 2
-    for i in 1:length(pdists)
+    for i = 1:length(pdists)
         qₗ += moments[mass_ind] / ρ_air
         mass_ind += NProgMoms[i]
     end
@@ -56,16 +56,19 @@ function parcel_model_cloudy(dY, Y, p, t)
     a3 = L_vap^2 / Rᵥ / T^2 / cp_air
 
     # Cloudy condensational growth / evaporation
-    p = merge(p, (; pdists = ntuple(length(p.pdists)) do i
-        ind_rng = get_dist_moments_ind_range(NProgMoms, i)
-        CPD.update_dist_from_moments(p.pdists[i], moments[ind_rng])
-    end))
+    p = merge(
+        p,
+        (; pdists = ntuple(length(p.pdists)) do i
+            ind_rng = get_dist_moments_ind_range(NProgMoms, i)
+            CPD.update_dist_from_moments(p.pdists[i], moments[ind_rng])
+        end),
+    )
     ξ = CO.G_func_liquid(aps, tps, T)
     dmom_ce = CL.Condensation.get_cond_evap(pdists, Sₗ - 1, ξ, ρₗ)
     # ... water mass budget
     mass_ind = 2
     dqₗ_dt_v2l = FT(0)
-    for i in 1:length(pdists)
+    for i = 1:length(pdists)
         dqₗ_dt_v2l += dmom_ce[mass_ind] / ρ_air
         mass_ind += NProgMoms[i]
     end
@@ -93,10 +96,23 @@ function run_parcel_cloudy(Yinit, t_0, t_end, pp)
     println("Condensation growth only ")
 
     # Parameters for the ODE solver
-    p = (wps = pp.wps, aps = pp.aps, tps = pp.tps, w = pp.w, pdists = pp.pdists, NProgMoms = pp.NProgMoms)
+    p = (
+        wps = pp.wps,
+        aps = pp.aps,
+        tps = pp.tps,
+        w = pp.w,
+        pdists = pp.pdists,
+        NProgMoms = pp.NProgMoms,
+    )
 
     problem = ODE.ODEProblem(parcel_model_cloudy, Yinit, (FT(t_0), FT(t_end)), p)
-    return ODE.solve(problem, ODE.Euler(), dt = pp.const_dt, reltol = 100 * eps(FT), abstol = 100 * eps(FT))
+    return ODE.solve(
+        problem,
+        ODE.Euler(),
+        dt = pp.const_dt,
+        reltol = 100 * eps(FT),
+        abstol = 100 * eps(FT),
+    )
 end
 
 function init_conditions(ρₗ, type::String)
@@ -184,15 +200,27 @@ Rogers_radius = [8.0, 8.08, 8.26, 8.91, 9.26, 9.68]
 fig = MK.Figure(size = (400, 600))
 ax1 = MK.Axis(fig[1, 1], xlabel = "time (s)", ylabel = "Supersaturation [%]")
 ax2 = MK.Axis(fig[2, 1], xlabel = "time (s)", ylabel = "radius [μm]")
-ax3 = MK.Axis(fig[3, 1], xlabel = "radius [μm]", ylabel = "dm / d(ln r) [kg / m^3]", xscale = log10, xticks = ([4, 8, 16], ["4", "8", "16"]))
-ax3m =  MK.Axis(fig[3, 1], ylabel = "m [kg / m^3]", yaxisposition = :right, xscale = log10, xticks = ([4, 8, 16], ["4", "8", "16"]))
+ax3 = MK.Axis(
+    fig[3, 1],
+    xlabel = "radius [μm]",
+    ylabel = "dm / d(ln r) [kg / m^3]",
+    xscale = log10,
+    xticks = ([4, 8, 16], ["4", "8", "16"]),
+)
+ax3m = MK.Axis(
+    fig[3, 1],
+    ylabel = "m [kg / m^3]",
+    yaxisposition = :right,
+    xscale = log10,
+    xticks = ([4, 8, 16], ["4", "8", "16"]),
+)
 MK.linkxaxes!(ax3, ax3m)
 MK.lines!(ax1, Rogers_time_supersat, Rogers_supersat, label = "Rogers_1975")
 MK.lines!(ax2, Rogers_time_radius, Rogers_radius)
 
 # Initial conditions
 size_distribution_list = ["monodisperse", "gamma", "mixture"]
-for j in 1:length(size_distribution_list)
+for j = 1:length(size_distribution_list)
 
     DSD = size_distribution_list[j]
     (dist_init, NProgMoms, moments_init, ml_v) = init_conditions(ρₗ, DSD)
@@ -204,14 +232,29 @@ for j in 1:length(size_distribution_list)
         xm = dist_init[1].θ
         rm = (xm / 1000 * 3 / 4 / π) .^ (1 / 3) * 1e6
         Mm = dist_init[1].θ * dist_init[1].n
-        MK.lines!(ax3m, [rm, rm], [0.0, Mm],  color = MK.Cycled(j + 1), linestyle = :dash, label = "init") # arbitrary maximum in the case of monodisperse
+        MK.lines!(
+            ax3m,
+            [rm, rm],
+            [0.0, Mm],
+            color = MK.Cycled(j + 1),
+            linestyle = :dash,
+            label = "init",
+        ) # arbitrary maximum in the case of monodisperse
     else
         (r, y) = get_spectrum(dist_init, NProgMoms, moments_init)
         MK.lines!(ax3, r, y, color = MK.Cycled(j + 1), linestyle = :dash)
     end
 
     Y0 = [Sₗ, p₀, T₀, qᵥ, moments_init...]
-    p = (wps = wps, aps = aps, tps = tps, w = w, const_dt = const_dt, pdists = dist_init, NProgMoms = NProgMoms)
+    p = (
+        wps = wps,
+        aps = aps,
+        tps = tps,
+        w = w,
+        const_dt = const_dt,
+        pdists = dist_init,
+        NProgMoms = NProgMoms,
+    )
 
     # solve ODE
     sol = run_parcel_cloudy(Y0, FT(0), t_max, p)
@@ -239,11 +282,25 @@ for j in 1:length(size_distribution_list)
         (r, y) = get_spectrum(dist_init, NProgMoms, sol[5:end, end])
         MK.lines!(ax3, r, y, color = MK.Cycled(j + 1))
     end
-    
+
 end
 
-MK.axislegend(ax1, framevisible = false, labelsize = 12, orientation = :horizontal, nbanks = 2, position = :rb)
+MK.axislegend(
+    ax1,
+    framevisible = false,
+    labelsize = 12,
+    orientation = :horizontal,
+    nbanks = 2,
+    position = :rb,
+)
 
-MK.axislegend(ax3m, framevisible = false, labelsize = 12, orientation = :horizontal, nbanks = 2, position = :rt)
+MK.axislegend(
+    ax3m,
+    framevisible = false,
+    labelsize = 12,
+    orientation = :horizontal,
+    nbanks = 2,
+    position = :rt,
+)
 
 MK.save(joinpath(dirname(@__DIR__), "figures/fig6_parcel_exp_gamma.pdf"), fig)
