@@ -201,25 +201,57 @@ function run_KiD_simulation(::Type{FT}, opts) where {FT}
         @info "Plotting"
         output = joinpath(path, "figures")
 
-        z_centers = vec(CC.Fields.coordinate_field(space))
-        plot_final_aux_profiles(z_centers, aux, precip; output)
-        if precip isa CO.PrecipitationP3
-            plot_animation_p3(z_centers, integrator, aux, moisture, precip, K1D, output)
-            plot_timeheight_p3(output_nc, precip; output)
-        else
-            get(opts, "make_animation", false) && plot_animation(output_nc; output)
-            plot_profiles_in_time(output_nc; output, n = 10)
-            plot_timeheight(output_nc; output, mixed_phase = false)
-        end
+        get(opts, "make_animation", false) && plot_animation(output_nc; output)
+        plot_profiles_in_time(output_nc; output, n = 10)
+        plot_timeheight(output_nc; output)
+        plot_cwp_rwp_rr([output_nc]; output)
     end
 
     nothing
 end
 
+# 6-moment Cloudy
 opts = default_KiD_config()
 opts["moisture_choice"] = "CloudyMoisture"
 opts["precipitation_choice"] = "CloudyPrecip"
 opts["n_elem"] = 128
 opts["num_moments"] = 6
+run_KiD_simulation(Float64, opts)
+
+# 4-moment Cloudy
+opts = default_KiD_config()
+opts["moisture_choice"] = "CloudyMoisture"
+opts["precipitation_choice"] = "CloudyPrecip"
+opts["n_elem"] = 128
+opts["num_moments"] = 4
+
+run_KiD_simulation(Float64, opts)
+
+# 11-moment Cloudy
+opts = default_KiD_config()
+opts["moisture_choice"] = "CloudyMoisture"
+opts["precipitation_choice"] = "CloudyPrecip"
+opts["n_elem"] = 128
+opts["num_moments"] = 11
+
+run_KiD_simulation(Float64, opts)
+
+# Clima1M
+opts = default_KiD_config()
+opts["moisture_choice"] = "EquilibriumMoisture"
+opts["precipitation_choice"] = "Precipitation1M"
+opts["rain_formation_scheme_choice"] = "CliMA_1M"
+opts["sedimentation_scheme_choice"] => "CliMA_1M"
+opts["n_elem"] = 128
+
+run_KiD_simulation(Float64, opts)
+
+# SB 2M
+opts = default_KiD_config()
+opts["moisture_choice"] = "EquilibriumMoisture"
+opts["precipitation_choice"] = "Precipitation2M"
+opts["rain_formation_scheme_choice"] = "SB2006"
+opts["sedimentation_scheme_choice"] = "SB2006"
+opts["n_elem"] = 128
 
 run_KiD_simulation(Float64, opts)

@@ -234,7 +234,7 @@ data_files = [
 ]
 pysdm_file = joinpath(
     opts_common["root_path"],
-    "../../results/pysdm/pysdm_colSed_fullDomain_N0=100.nc",
+    "../../results/pysdm/pysdm_colSed_partDomain_N0=100.nc",
 )
 plot_cwp_rwp_rr(
     [data_files..., pysdm_file],
