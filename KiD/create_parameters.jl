@@ -4,6 +4,7 @@ import ClimaParams as CP
 import CloudMicrophysics as CM
 import Thermodynamics as TD
 import Cloudy as CL
+import SpecialFunctions as SF
 
 function override_toml_dict(
     toml_dict::CP.ParamDict{FT};
@@ -219,7 +220,7 @@ function create_cloudy_parameters(
 
     # Define terminal velocity coefficients, assuming vt = sum_i v_i[1] * x^(v_i[2]) 
     # v1 is normalized by mass norm; v1 = v1 * norm[2] ^ v2
-    vel = ((FT(30), FT(1.0 / 6)),) # 30 kg ^ (-1/6) * m / s
+    vel = ((FT(50), FT(1.0 / 6)),) # 30 kg ^ (-1/6) * m / s
 
     cloudy_params = CO.Parameters.CloudyParameters(
         NProgMoms,
@@ -230,4 +231,81 @@ function create_cloudy_parameters(
         size_threshold,
     )
     return cloudy_params, pdists
+end
+
+"""
+    Populate the remaining profiles based on given initial conditions including total specific water
+    content (liquid + rain) and total number concentration
+"""
+function initial_condition_0d(
+    ::Type{FT},
+    thermo_params::TD.Parameters.ThermodynamicsParameters{FT},
+    qt::FT,
+    Nd::FT,
+    k::FT,
+    ρ_dry::FT,
+    radius_th::FT = 50 * 1e-6,
+) where {FT}
+
+    # qt represents specific water content in cloud and rain. The initialization in PySDM is
+    # based on initial gamma distributions. This can lead to initial existence of rain; so here
+    # we compute variables for any general initial gamma distributions, by assuming absolute
+    # fixed radius threshold of 40 um between cloud droplets and raindrops.
+    # Lt : total liquid plus rain content (no vapor; or assuming vapor is contained in dry air density)
+    Lt::FT = ρ_dry * qt / (1 - qt)
+
+    rhow = FT(1000)
+    thrshld::FT = 4 / 3 * pi * (radius_th)^3 * rhow / (Lt / Nd / k)
+
+    mass_ratio = SF.gamma_inc(thrshld, k + 1)[2]
+    ρq_liq::FT = mass_ratio * Lt
+    ρq_rai::FT = Lt - ρq_liq
+    ρq_tot::FT = Lt
+    ρq_ice::FT = FT(0)
+    ρq_sno::FT = FT(0)
+    ρq_vap::FT = FT(0)
+
+    ρ = ρ_dry + Lt
+
+    q_liq::FT = ρq_liq / ρ
+    q_rai::FT = ρq_rai / ρ
+    q_tot::FT = qt
+    q_ice::FT = FT(0)
+    q_sno::FT = FT(0)
+
+    num_ratio = SF.gamma_inc(thrshld, k)[2]
+    N_liq::FT = num_ratio * Nd
+    N_rai::FT = Nd - N_liq
+    N_aer::FT = FT(0)
+
+    T::FT = FT(300)
+    p = TD.air_pressure(thermo_params, T, ρ, q_tot, q_liq, q_ice)
+    θ_liq_ice = TD.liquid_ice_pottemp(thermo_params, T, ρ, q_tot, q_liq, q_ice)
+    θ_dry = TD.potential_temperature(thermo_params, T, ρ_dry)
+
+    zero::FT = FT(0)
+
+    return (;
+        ρ,
+        ρ_dry,
+        T,
+        p,
+        θ_liq_ice,
+        θ_dry,
+        ρq_tot,
+        ρq_liq,
+        ρq_ice,
+        ρq_rai,
+        ρq_sno,
+        ρq_vap,
+        q_tot,
+        q_liq,
+        q_ice,
+        q_rai,
+        q_sno,
+        N_liq,
+        N_rai,
+        N_aer,
+        zero,
+    )
 end
