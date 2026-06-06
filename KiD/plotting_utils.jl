@@ -142,7 +142,6 @@ function plot_timeheight(nc_data_file; output = "output", pysdm = false)
         xlabel = "time [s]",
         ylabel = "z [m]",
         color = :BuPu,
-        clims = (0, 1),
     )
     p2 = Plots.heatmap(
         t_plt,
@@ -152,7 +151,6 @@ function plot_timeheight(nc_data_file; output = "output", pysdm = false)
         xlabel = "time [s]",
         ylabel = "z [m]",
         color = :BuPu,
-        clims = (0, 1),
     )
     p3 = Plots.heatmap(
         t_plt,
@@ -162,7 +160,6 @@ function plot_timeheight(nc_data_file; output = "output", pysdm = false)
         xlabel = "time [s]",
         ylabel = "z [m]",
         color = :BuPu,
-        clims = (0, 0.25),
     )
     p = Plots.plot(
         p1,

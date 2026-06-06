@@ -77,7 +77,7 @@ function run_KiD_col_sed_simulation(::Type{FT}, opts) where {FT}
     )
 
     # Create the initial condition profiles
-    ic_0d = CO.initial_condition_0d(
+    ic_0d = initial_condition_0d(
         FT,
         thermo_params,
         opts["qt"],
@@ -85,15 +85,30 @@ function run_KiD_col_sed_simulation(::Type{FT}, opts) where {FT}
         opts["k"],
         opts["rhod"],
     )
+    ic_zero = initial_condition_0d(
+        FT,
+        thermo_params,
+        FT(0),
+        eps(FT),
+        opts["k"],
+        opts["rhod"],
+    )
+    z_bot = FT(opts["z_bot"])
+    z_top = FT(opts["z_top"])
     if precipitation_choice == "CloudyPrecip"
         cloudy_disttypes = determine_cloudy_disttypes(opts["num_moments"])
         cloudy_params, cloudy_pdists =
             create_cloudy_parameters(FT, cloudy_disttypes, opts["kernel"])
         ic_cloudy = CO.cloudy_initial_condition(cloudy_pdists, ic_0d, opts["k"])
-        init = map(Returns(ic_cloudy), coord)
+        ic_cloudy_zero = CO.cloudy_initial_condition(cloudy_pdists, ic_zero, opts["k"])
+        init = map(coord) do c
+            c.z >= z_bot && c.z <= z_top ? ic_cloudy : ic_cloudy_zero
+        end
     else
         cloudy_params = nothing
-        init = map(Returns(ic_0d), coord)
+        init = map(coord) do c
+            c.z >= z_bot && c.z <= z_top ? ic_0d : ic_zero
+        end
     end
 
     # Create aux vector and apply initial condition
@@ -110,6 +125,7 @@ function run_KiD_col_sed_simulation(::Type{FT}, opts) where {FT}
         face_space,
         moisture,
         precip,
+        "ShipwayHill2012",
         cloudy_params,
     )
 
@@ -151,7 +167,7 @@ end
 
 opts_common = Dict(
     "qt" => 1e-3,
-    "prescribed_Nd" => 1e8,
+    "prescribed_Nd" => 1e7,
     "k" => 2.0,
     "rhod" => 1.0,
     "precipitation_choice" => nothing,
@@ -160,11 +176,13 @@ opts_common = Dict(
     "num_moments" => 6,
     "z_min" => 0.0,
     "z_max" => 3000.0,
+    "z_bot" => 1500.0,
+    "z_top" => 2250.0,
     "n_elem" => 60,
     "dt" => 1.0,
     "dt_output" => 30.0,
     "t_ini" => 0.0,
-    "t_end" => 3600.0,
+    "t_end" => 1000.0,
     "root_path" => joinpath(@__DIR__, "Output_KiD_col_sed"),
     "output_folder" => "output",
     "output_nc_file" => "Output.nc",
@@ -234,8 +252,9 @@ data_files = [
 ]
 pysdm_file = joinpath(
     opts_common["root_path"],
-    "../../results/pysdm/pysdm_colSed_partDomain_N0=100.nc",
+    "../../results/pysdm/pysdm_colSed_partDomain_N0=10.nc",
 )
+plot_timeheight(pysdm_file, output = opts_common["root_path"], pysdm = true)
 plot_cwp_rwp_rr(
     [data_files..., pysdm_file],
     output = opts_common["root_path"],
