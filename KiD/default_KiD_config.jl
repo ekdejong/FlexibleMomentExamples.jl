@@ -65,7 +65,7 @@ function default_KiD_config()
         "t1" => Float64(600),
 
         # Pressure at the surface [pa]
-        "p0" => Float64(99000),
+        "p0" => Float64(100000),
 
         # aerosol distribution mean radius for aerosol activation calculations in 2M schemes [m]
         "r_dry" => Float64(0.04 * 1e-6),
