@@ -125,7 +125,7 @@ function run_KiD_col_sed_simulation(::Type{FT}, opts) where {FT}
         face_space,
         moisture,
         precip,
-        "ShipwayHill2012",
+#        "ShipwayHill2012",
         cloudy_params,
     )
 
@@ -180,9 +180,9 @@ opts_common = Dict(
     "z_top" => 2250.0,
     "n_elem" => 60,
     "dt" => 1.0,
-    "dt_output" => 30.0,
+    "dt_output" => 10.0,
     "t_ini" => 0.0,
-    "t_end" => 1000.0,
+    "t_end" => 1500.0,
     "root_path" => joinpath(@__DIR__, "Output_KiD_col_sed"),
     "output_folder" => "output",
     "output_nc_file" => "Output.nc",
@@ -205,6 +205,16 @@ opts_cloudy6 = merge(
         "kernel" => "Long",
         "output_folder" => "CloudyPrecip_6",
         "output_nc_file" => "Flexible_6M,_Long.nc",
+    ),
+)
+opts_cloudy7 = merge(
+    opts_common,
+    Dict(
+        "precipitation_choice" => "CloudyPrecip",
+        "num_moments" => 7,
+        "kernel" => "Long",
+        "output_folder" => "CloudyPrecip_7",
+        "output_nc_file" => "Flexible_7M,_Long.nc",
     ),
 )
 opts_cloudy6_gol = merge(
@@ -238,7 +248,7 @@ opts_2m = merge(
     ),
 )
 
-multiple_models_opts = (opts_cloudy4, opts_cloudy6, opts_cloudy6_gol, opts_1m, opts_2m)
+multiple_models_opts = (opts_cloudy4, opts_cloudy6, opts_cloudy7, opts_1m, opts_2m)
 for opts in multiple_models_opts
     run_KiD_col_sed_simulation(Float64, opts)
 end

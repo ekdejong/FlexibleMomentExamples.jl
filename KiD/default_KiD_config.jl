@@ -41,16 +41,16 @@ function default_KiD_config()
         "z_min" => Float64(0.0),
 
         # Top of the computational domain [m]
-        "z_max" => Float64(2000),
+        "z_max" => Float64(3000),
 
         # Number of computational elements
-        "n_elem" => 128,
+        "n_elem" => 120,
 
         # Simulation time step [s]
         "dt" => Float64(1),
 
         # Output time step [s]
-        "dt_output" => Float64(30),
+        "dt_output" => Float64(10),
 
         # Time at the beginning of the simulation [s]
         "t_ini" => Float64(0),
@@ -65,7 +65,7 @@ function default_KiD_config()
         "t1" => Float64(600),
 
         # Pressure at the surface [pa]
-        "p0" => Float64(100000),
+        "p0" => Float64(99000),
 
         # aerosol distribution mean radius for aerosol activation calculations in 2M schemes [m]
         "r_dry" => Float64(0.04 * 1e-6),
