@@ -17,4 +17,5 @@ Thermodynamics = "b60c26fb-14c3-4610-9d3e-2d17fe7ff00c"
 [compat]
 CloudMicrophysics = ">=0.26.4"
 Cloudy = "0.6.0"
+KinematicDriver = "0.14.1"
 julia = "1.11"
