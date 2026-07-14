@@ -125,7 +125,7 @@ function run_KiD_col_sed_simulation(::Type{FT}, opts) where {FT}
         face_space,
         moisture,
         precip,
-#        "ShipwayHill2012",
+       "ShipwayHill2012",
         cloudy_params,
     )
 
