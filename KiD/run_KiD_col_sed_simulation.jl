@@ -217,6 +217,16 @@ opts_cloudy7 = merge(
         "output_nc_file" => "Flexible_7M,_Long.nc",
     ),
 )
+opts_cloudy10 = merge(
+    opts_common,
+    Dict(
+        "precipitation_choice" => "CloudyPrecip",
+        "num_moments" => 10,
+        "kernel" => "Long",
+        "output_folder" => "CloudyPrecip_12",
+        "output_nc_file" => "Flexible_7M,_Long.nc",
+    ),
+)
 opts_cloudy6_gol = merge(
     opts_common,
     Dict(
@@ -248,7 +258,7 @@ opts_2m = merge(
     ),
 )
 
-multiple_models_opts = (opts_cloudy6,) #(opts_cloudy4, opts_cloudy6, opts_cloudy7, opts_1m, opts_2m)
+multiple_models_opts = (opts_cloudy4, opts_cloudy6, opts_cloudy7, opts_cloudy12, opts_1m, opts_2m)
 for opts in multiple_models_opts
     run_KiD_col_sed_simulation(Float64, opts)
 end

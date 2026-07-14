@@ -210,42 +210,46 @@ function run_KiD_simulation(::Type{FT}, opts) where {FT}
     nothing
 end
 
+# 4-moment Cloudy
+opts = default_KiD_config()
+opts["moisture_choice"] = "CloudyMoisture"
+opts["precipitation_choice"] = "CloudyPrecip"
+opts["num_moments"] = 4
+run_KiD_simulation(Float64, opts)
+
 # 6-moment Cloudy
 opts = default_KiD_config()
 opts["moisture_choice"] = "CloudyMoisture"
 opts["precipitation_choice"] = "CloudyPrecip"
-#opts["kernel"] = "Long"
 opts["num_moments"] = 6
 run_KiD_simulation(Float64, opts)
 
-# # 4-moment Cloudy
-# opts = default_KiD_config()
-# opts["moisture_choice"] = "CloudyMoisture"
-# opts["precipitation_choice"] = "CloudyPrecip"
-# #opts["kernel"] = "Long"
-# opts["num_moments"] = 4
-# run_KiD_simulation(Float64, opts)
+# 7-moment Cloudy
+opts = default_KiD_config()
+opts["moisture_choice"] = "CloudyMoisture"
+opts["precipitation_choice"] = "CloudyPrecip"
+opts["num_moments"] = 7
+run_KiD_simulation(Float64, opts)
 
-# # 7-moment Cloudy
-# opts = default_KiD_config()
-# opts["moisture_choice"] = "CloudyMoisture"
-# opts["precipitation_choice"] = "CloudyPrecip"
-# opts["num_moments"] = 7
-# #opts["kernel"] = "Long"
-# run_KiD_simulation(Float64, opts)
+# 10-moment Cloudy
+opts = default_KiD_config()
+opts["moisture_choice"] = "CloudyMoisture"
+opts["precipitation_choice"] = "CloudyPrecip"
+opts["num_moments"] = 10
+run_KiD_simulation(Float64, opts)
 
-# # Clima1M
-# opts = default_KiD_config()
-# opts["moisture_choice"] = "EquilibriumMoisture"
-# opts["precipitation_choice"] = "Precipitation1M"
-# opts["rain_formation_scheme_choice"] = "CliMA_1M"
-# opts["sedimentation_scheme_choice"] => "CliMA_1M"
-# run_KiD_simulation(Float64, opts)
+# Clima1M
+opts = default_KiD_config()
+opts["moisture_choice"] = "EquilibriumMoisture"
+opts["precipitation_choice"] = "Precipitation1M"
+opts["rain_formation_scheme_choice"] = "CliMA_1M"
+opts["sedimentation_scheme_choice"] => "CliMA_1M"
+run_KiD_simulation(Float64, opts)
 
-# # SB 2M
-# opts = default_KiD_config()
-# opts["moisture_choice"] = "EquilibriumMoisture"
-# opts["precipitation_choice"] = "Precipitation2M"
-# opts["rain_formation_scheme_choice"] = "SB2006"
-# opts["sedimentation_scheme_choice"] = "SB2006"
-# run_KiD_simulation(Float64, opts)
+# SB 2M
+opts = default_KiD_config()
+opts["moisture_choice"] = "EquilibriumMoisture"
+opts["precipitation_choice"] = "Precipitation2M"
+opts["rain_formation_scheme_choice"] = "SB2006"
+opts["sedimentation_scheme_choice"] = "SB2006"
+run_KiD_simulation(Float64, opts)
