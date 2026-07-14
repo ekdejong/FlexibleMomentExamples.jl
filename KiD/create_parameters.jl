@@ -220,7 +220,7 @@ function create_cloudy_parameters(
 
     # Define terminal velocity coefficients, assuming vt = sum_i v_i[1] * x^(v_i[2]) 
     # v1 is normalized by mass norm; v1 = v1 * norm[2] ^ v2
-    vel = ((FT(50), FT(1.0 / 6)),) # 30 kg ^ (-1/6) * m / s
+    vel = ((FT(63), FT(1.0 / 6)),) # 63 kg ^ (-1/6) * m / s
 
     cloudy_params = CO.Parameters.CloudyParameters(
         NProgMoms,
